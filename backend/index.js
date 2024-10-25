@@ -25,7 +25,7 @@ app.get("/",(req,res)=>{
 const storage=multer.diskStorage({
     destination: "./upload/images",
     filename: (req, file, cb) => {
-        return cb(null, `${file.filedname}_${Date.now()}${path.extname(file.originalname)}`);
+        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
     }
 })
 
@@ -48,7 +48,7 @@ const Product=mongoose.model("Product",{
         type:String,
         required:true,
     },
-    images:{
+    image:{
         type:String,
         required:true,
     },
@@ -76,10 +76,23 @@ const Product=mongoose.model("Product",{
 })
 
 app.post('/addproduct',async(req,res)=>{
+
+    let products=await Product.find({});
+    let id;
+
+    if(products.length>0){
+        let last_product_array = products.slice(-1);
+        let last_product=last_product_array[0];
+        id=last_product.id+1;     
+    }
+    else{
+        id=1;
+    }
+
     const product = new Product({
-        id: req.body.id,
+        id: id,
         name: req.body.name,
-        images: req.body.images,
+        image: req.body.image,
         category: req.body.category,
         new_price: req.body.new_price,
         old_price: req.body.old_price,
@@ -91,6 +104,109 @@ app.post('/addproduct',async(req,res)=>{
         success:true,
         name: req.body.name,
     })
+})
+
+
+app.post('/removeproduct',async(req,res)=>{
+    await Product.findOneAndDelete({id: req.body.id});
+    console.log("Removed");
+    res.json({
+        success:true,
+        name:req.body.name,
+    })
+})
+
+app.get('/allproducts',async(req,res)=>{
+    let products=await Product.find({});
+        console.log("All product Fetched");
+        res.send(products);
+})
+
+//user schema
+const User=mongoose.model('User',{
+    name: {
+        type:String,
+    },
+    email:{
+        type:String,
+        
+        unique:true
+    },
+    password:{
+        type:String,
+    },
+    cartData:{
+        type:Object,
+    },
+    date:{
+        type:Date,
+        default: Date.now,
+    }, 
+})
+
+
+app.post('/signup',async(req,res)=>{
+    let check = await User.findOne({email:req.body.email});
+    if(check){
+        return res.status(400).json({success: false, errors: "Email already exists"});
+    }
+
+    let cart ={};
+    for (let i = 0; i < 300; i++) {
+        cart[i]=0;
+        
+    }
+
+    const user = new User({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        cartData: cart,
+    });
+    await user.save();
+
+    const data = {
+        user:{
+            id: user.id
+        }
+        
+    }
+
+    const token = jwt.sign(data, "my_secret_key");
+    res.json({
+        success: true,
+        token: token,
+    });
+})
+
+app.post('/login',async(req,res)=>{
+    let user = await User.findOne({email:req.body.email});
+    if(user){
+        const passMatch=req.body.password===user.password;
+        if(passMatch){
+            const data = {
+                user:{
+                    id: user.id
+                }
+                
+            }
+            const token = jwt.sign(data, "my_secret_key");
+            res.json({
+                success: true,
+                token: token,
+            });
+        }else{
+            res.json({
+                success:false,
+                errors: "Incorrect password "
+            })
+        }
+    }else {
+        res.json({
+            success:false,
+            errors: "Incorrect email"
+        })
+    }
 })
 
 app.listen(port, (error)=>{
