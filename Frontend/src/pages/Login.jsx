@@ -3,17 +3,57 @@ import React, { useState } from "react";
 const Login = () => {
   const [state, setState] = useState("Sign Up");
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
   })
 
+  const changeHandler = (e)=>{
+    setFormData({...formData, [e.target.name] : e.target.value })
+  }
+
   const login=async()=>{
-    console.log("login")
+    console.log("login",formData)
+
+    let responseData;
+    await fetch('http://localhost:4000/login',{
+      method: 'POST',
+      headers:{
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData),
+    }).then((response)=>response.json()).then((data)=>responseData=data);
+
+    if(responseData.success){
+      localStorage.setItem('auth-token', responseData.token);
+      window.location.replace('/');
+    }
+    else{
+      alert(responseData.errors);
+    }
   }
 
   const signup=async()=>{
-    console.log("signup")
+    console.log("signup",formData);
+
+    let responseData;
+    await fetch('http://localhost:4000/signup',{
+      method: 'POST',
+      headers:{
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData),
+    }).then((response)=>response.json()).then((data)=>responseData=data);
+
+    if(responseData.success){
+      localStorage.setItem('auth-token', responseData.token);
+      window.location.replace('/');
+    }
+    else{
+      alert(responseData.errors);
+    }
   }
 
   return (
@@ -23,6 +63,8 @@ const Login = () => {
         <div className="flex flex-col gap-4 mt-7">
           {state === "Sign Up" ? (
             <input
+              name="username"
+              value={formData.username} onChange={changeHandler}
               type="text"
               placeholder="Your name"
               className="h-14 w-full pl-5 bg-slate-900/5 outline-none rounded-xl"
@@ -31,12 +73,16 @@ const Login = () => {
             ""
           )}
           <input
+            name="email"
+            value={formData.email} onChange={changeHandler}
             type="email"
             placeholder="Email Address"
             className="h-14 w-full pl-5 bg-slate-900/5 outline-none rounded-xl"
           />
 
           <input
+            name="password"
+            value={formData.password} onChange={changeHandler}
             type="password"
             placeholder="Password"
             className="h-14 w-full pl-5 bg-slate-900/5 outline-none rounded-xl"

@@ -8,6 +8,7 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const exp = require("constants");
+const { error } = require("console");
 
 app.use(express.json());
 app.use(cors());
@@ -207,6 +208,61 @@ app.post('/login',async(req,res)=>{
             errors: "Incorrect email"
         })
     }
+})
+
+
+app.get('/newcollection',async(req,res)=>{
+    let products=await Product.find({});
+    let newcollection=products.slice(1).slice(-8);
+    console.log("New Collection");                  
+    res.send(newcollection);                
+})
+
+app.get('/popularproducts',async (req, res)=>{
+    let products=await Product.find({category:"men"});
+    let popularprod=products.slice(0,4);
+    console.log("Popular Products Fetched");
+    res.send(popularprod);
+})
+
+
+
+const fetchUser=async (req, res,next)=>{
+    const token = req.header('auth-token');
+    if(!token){
+        res.status(401).send({errors:"Please authenticate using valid login"})
+    }else {
+        try {
+            const data = jwt.verify(token, "my_secret_key");
+            req.user = data.user;
+            next();
+        } catch (error) {
+            res.status(401).send({errors:"Invalid token"})
+        }
+    }
+}
+
+app.post('/addtocart',fetchUser,async (req,res)=>{
+    let userData=await User.findOne({_id:req.user.id})
+    userData.cartData[req.body.itemId]+=1;
+    await User.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    res.send("Added")
+})
+
+
+app.post('/removefromcart',fetchUser,async (req,res)=>{
+    let userData=await User.findOne({_id:req.user.id});
+    if(userData.cartData[req.body.itemId]>0)
+        userData.cartData[req.body.itemId]-=1;
+    await User.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    res.send("Removed")
+})
+
+app.post('/getcart',fetchUser,async (req,res)=>{
+    console.log('Get cart');
+    let userData=await User.findOne({_id:req.user.id});
+    res.send(userData.cartData)
+    
 })
 
 app.listen(port, (error)=>{

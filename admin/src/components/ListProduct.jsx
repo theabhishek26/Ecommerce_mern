@@ -51,7 +51,7 @@ const ListProduct = () => {
                 <td>Rs{product.old_price}</td>
                 <td>Rs{product.new_price}</td>
                 <td>{product.category}</td>
-                <td><div className='bold-22 pl-6 sm:pl-14'><TbTrash  onClick={()=>remove_product(product.id)}/></div></td>
+                <td><div className='bold-22 pl-6 sm:pl-14'><TbTrash  onClick={()=>remove_product(product.id)} className='cursor-pointer'/></div></td>
               </tr>
             ))}
           </tbody>
