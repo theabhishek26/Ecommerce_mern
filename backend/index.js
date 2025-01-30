@@ -11,7 +11,13 @@ const exp = require("constants");
 const { error } = require("console");
 
 app.use(express.json());
-app.use(cors());
+app.use(cors(
+    {
+        origin:["https://ecommerce-mern-68xt.vercel.app/"],
+        methods:["POST","GET"],
+        credentials:true
+    }
+));
 
 //database connect with mongose
 
